@@ -37,7 +37,7 @@ function sendCurrentUsers (socket) {
 	socket.emit('message', message);
 	savetoAtlas(info.room, message)
 }
-
+//function to save data to Atlas
 function savetoAtlas(room,message){
 	let chat = mongoose.model(room, chatSchema)
 	let newMessage = new chat(message)
