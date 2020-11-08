@@ -1,10 +1,11 @@
 var PORT = process.env.PORT || 8000;
+//var rounter = require(http)
 var moment = require('moment');
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-require('./public/js/dbconnect.js')
+var connect = require('./public/js/dbconnect.js')
 var chatSchema = require('./public/js/chat.model.js');
 const mongoose = require('mongoose');
 
@@ -39,7 +40,7 @@ function sendCurrentUsers (socket) {
 }
 //function to save data to Atlas
 function savetoAtlas(room,message){
-	let chat = mongoose.model(room, chatSchema)
+	let chat = mongoose.model(room, chatSchema,room)
 	let newMessage = new chat(message)
 	newMessage.save()
 }
@@ -64,13 +65,42 @@ io.on('connection', function (socket) {
 	socket.on('joinRoom', function (req) {
 		clientInfo[socket.id] = req;
 		socket.join(req.room);
-		let message = {
-			name: 'System',
-			text: req.name + ' has joined!',
-			timestamp: moment().valueOf()
-		}
-		socket.broadcast.to(req.room).emit('message', message);			
-		savetoAtlas(req.room,message)
+
+		let pastmessages   = mongoose.model(req.room, chatSchema).find({}, function(err,docs){
+			console.log(typeof(docs))
+			docs.forEach( (pastmessage) =>{
+				
+				let pmessage = {
+					name: pastmessage.name,
+					text: pastmessage.text,
+					timestamp: pastmessage.timestamp
+				}
+				socket.emit('pastMessage', pmessage);	
+				console.log(pmessage)
+				console.log(req.room)
+			})
+		}).then( ()=>{
+				let message = {
+					name: 'System',
+					text: req.name + ' has joined!',
+					timestamp: moment().valueOf()
+				}
+				socket.broadcast.to(req.room).emit('message', message);			
+				savetoAtlas(req.room,message)
+			})
+
+		// mongoose.connection.db.collection(req.room, function (err, collection) {
+		// 	console.log(collection.find())
+		// 	collection.forEach( pastmessage =>{
+		// 		let message = {
+		// 			name: pastmessage.name,
+		// 			text: pastmessage.text,
+		// 			timestamp: moment.format(pastmessage.timestamp)
+		// 		}
+		// 		socket.broadcast.to(req.room).emit('message', message);	
+		// 	})
+		// });
+
 	});
 
 	socket.on('message', function (message) {
@@ -82,7 +112,6 @@ io.on('connection', function (socket) {
 			message.timestamp = moment().valueOf();
 			io.to(clientInfo[socket.id].room).emit('message', message);	
 			savetoAtlas(clientInfo[socket.id].room, message)
-
 		}
 	});
 
