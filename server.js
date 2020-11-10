@@ -53,11 +53,13 @@ io.on('connection', function (socket) {
 
 		if (typeof userData !== 'undefined') {
 			socket.leave(userData.room);
-			io.to(userData.room).emit('message', {
+			let message = {
 				name: 'System',
 				text: userData.name + ' has left!',
 				timestamp: moment().valueOf()
-			});
+			}
+			io.to(userData.room).emit('message', message );
+			savetoAtlas(userData.room,message)
 			delete clientInfo[socket.id];
 		}
 	});
@@ -67,17 +69,13 @@ io.on('connection', function (socket) {
 		socket.join(req.room);
 
 		let pastmessages   = mongoose.model(req.room, chatSchema).find({}, function(err,docs){
-			console.log(typeof(docs))
 			docs.forEach( (pastmessage) =>{
-				
 				let pmessage = {
 					name: pastmessage.name,
 					text: pastmessage.text,
 					timestamp: pastmessage.timestamp
 				}
 				socket.emit('pastMessage', pmessage);	
-				console.log(pmessage)
-				console.log(req.room)
 			})
 		}).then( ()=>{
 				let message = {

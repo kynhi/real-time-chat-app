@@ -1,7 +1,7 @@
 var name = getQueryVariable('name') || 'Anonymous';
 var room = getQueryVariable('room');
 var socket = io();
-
+var messageBackground = true;
 console.log(name + ' wants to join ' + room);
 
 // Update h1 tag
@@ -18,7 +18,14 @@ socket.on('connect', function () {
 socket.on('message', function (message) {
 	var momentTimestamp = moment.utc(message.timestamp);
 	var $messages = jQuery('.messages');
-	var $message = jQuery('<li class="list-group-item"></li>');
+	var $message
+	if (messageBackground){
+		$message = jQuery('<li class="list-group-item" style="background-color: #808080;" ></li>');
+		messageBackground =!messageBackground;
+	} else {
+		$message = jQuery('<li class="list-group-item"></li>');
+		messageBackground =!messageBackground;
+	}
 
 	console.log('New message:');
 	console.log(message.text);
@@ -31,8 +38,14 @@ socket.on('message', function (message) {
 socket.on('pastMessage', function (message) {
 	var momentTimestamp = moment.utc(message.timestamp);
 	var $messages = jQuery('.messages');
-	var $message = jQuery('<li class="list-group-item"></li>');
-
+	var $message
+	if (messageBackground){
+		$message = jQuery('<li class="list-group-item" style="background-color: #808080;" ></li>');
+		messageBackground =!messageBackground;
+	} else {
+		$message = jQuery('<li class="list-group-item"></li>');
+		messageBackground =!messageBackground;
+	}
 	console.log('Past message:');
 	console.log(message.text);
 
